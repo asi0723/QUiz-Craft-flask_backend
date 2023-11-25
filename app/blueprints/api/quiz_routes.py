@@ -140,11 +140,10 @@ def getQuizzes():
 
     quizzes = db.session.execute(db.select(Quiz)).scalars().all()
     print("*"*30, quizzes)
-    quiz_data = [{'title': quiz.title, 'submissions': len(quiz.submissions), 'description': quiz.description, 'author': {'id': quiz.author.user_id, 'first_name': quiz.author.first_name}} for quiz in quizzes]
+    quiz_data = [{'title': quiz.title, 'description': quiz.description, 'author': {'id': quiz.author.user_id, 'first_name': quiz.author.first_name}} for quiz in quizzes]
     return jsonify(quiz_data), 200
-# 
-# add questions to a quiz
-@api.route('/questions/add/<int:quiz_id>', methods=['POST'])
+
+@api.route('/questions/<int:quiz_id>', methods=['POST'])
 @token_auth.login_required
 def addQuestions(quiz_id):
     current_user = token_auth.current_user()
