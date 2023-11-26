@@ -31,13 +31,13 @@ def create_user():
     check_user = db.session.execute(db.select(User).where((User.email == email ))).scalar()
 
     if check_user:
-        return {'error': 'A user already registered with this email'}, 401
+        return {'error': 'A user already registered with this email'}, 409
     
     new_user = User(first_name=first_name, last_name=last_name, email=email, password=password)
     db.session.add(new_user)
     db.session.commit()
 
-    return new_user.to_dict(), 201
+    return {'msg': "User signed up successfully"}, 201
 
 
 @user_bp.route('/delete', methods=['DELETE'])

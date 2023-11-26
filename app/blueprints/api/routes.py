@@ -140,8 +140,32 @@ def getQuizzes():
 
     quizzes = db.session.execute(db.select(Quiz)).scalars().all()
     print("*"*30, quizzes)
-    quiz_data = [{'title': quiz.title, 'submissions': len(quiz.submissions), 'description': quiz.description, 'author': {'id': quiz.author.user_id, 'first_name': quiz.author.first_name}} for quiz in quizzes]
-    return jsonify(quiz_data), 200
+    quiz_data = []
+    for quiz in quizzes:
+        quiz = {
+            'title': quiz.title,
+            'quiz_id': quiz.quiz_id,
+            'questions': len(quiz.questions),
+            'submissions': len(quiz.submissions),
+            'description': quiz.description,
+            'author': {
+                'id': quiz.author.user_id,
+                'firstName': quiz.author.first_name,
+                'lastName': quiz.author.last_name
+                }
+        }
+        quiz_data.append(quiz)    
+    return quiz_data, 200
+
+# # route to get a single quiz
+# @api.route('/<int:quiz_id>')
+# def getSingleQuiz(quiz_id):
+
+#     quiz = db.session.query(Quiz).get(quiz_id)
+#     if not quiz:
+#         return {'error': "Quiz not found"}, 404
+#     else:
+#         Quiz.q
 # 
 # add questions to a quiz
 @api.route('/questions/add/<int:quiz_id>', methods=['POST'])
@@ -194,14 +218,19 @@ def getQuizQuestions(quiz_id):
     questions = []
     for question in quiz.questions:
         incorrect_answers = []
-        correct_answer = ""
+        correct_answer = {
+            'id': 0,
+            'text': ""
+        }
         for answer in question.answers:
             if(answer.correct):
-                correct_answer = answer.text
+                correct_answer['id'] = answer.answer_id
+                correct_answer['text'] = answer.text
             else:
-                incorrect_answers.append(answer.text)
+                incorrect_answers.append({'id': answer.answer_id, 'text': answer.text})
         new_question = {
             'question': question.question,
+            'question_id': question.question_id,
             'correct_answer': correct_answer,
             'incorrect_answers': incorrect_answers
         }
