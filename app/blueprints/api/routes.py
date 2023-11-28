@@ -126,7 +126,6 @@ def userQuiz():
             'quiz_id': quiz.quiz_id,
             'title': quiz.title,
             'description': quiz.description,
-            'author_id': quiz.user_id,
             'total_questions': len(quiz.questions),
             'submissions': len(quiz.submissions)
         }
@@ -210,9 +209,13 @@ def addQuestions(quiz_id):
 # route to get all questions for a quiz
 @api.route('/question/<int:quiz_id>')
 # @token_auth.login_required
-def getQuizQuestions(quiz_id):
+def getQuizQuestions(quiz_id, user_id=0):
     
-    quiz = db.session.execute(db.select(Quiz).where(Quiz.quiz_id == quiz_id)).scalar()
+    if user_id > 0:
+        quiz = db.session.execute(db.select(Quiz).where((Quiz.quiz_id == quiz_id) & (Quiz.user_id == user_id))).scalar()
+    else:
+        quiz = db.session.execute(db.select(Quiz).where(Quiz.quiz_id == quiz_id)).scalar()
+
     if not quiz:
         return {'error': "Quiz not found!"}, 404 
     questions = []
@@ -237,7 +240,16 @@ def getQuizQuestions(quiz_id):
 
         questions.append(new_question)
 
-    return {'questions': questions}
+    return {'questions': questions, 'title': quiz.title, 'description': quiz.description}, 200
+
+# route to get question to be edited
+@api.route('/edit/<int:quiz_id>')
+@token_auth.login_required
+def getQuizToEdit(quiz_id):
+    user = token_auth.current_user()
+    user_id = user.user_id
+    result, status = getQuizQuestions(quiz_id, user_id)
+    return result , status
 
 
 # submit a quiz
