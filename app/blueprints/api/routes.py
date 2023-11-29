@@ -185,7 +185,7 @@ def addQuestions(quiz_id):
     questions = data.get('questions', [])
 
     for question_data in questions:
-        new_question = QuizQuestion(question=question_data['question'], quiz=current_quiz)
+        new_question = QuizQuestion(question_id=question_data['id'], question=question_data['question'], quiz=current_quiz)
         db.session.add(new_question)
         db.session.commit()
 
@@ -194,7 +194,7 @@ def addQuestions(quiz_id):
 
         for answer_data in answers:
             if answer_data.get('question_id') == question_data.get('question_id'):
-                new_answer = QuestionAnswers(text=answer_data['text'], correct=answer_data['correct'], question=new_question)
+                new_answer = QuestionAnswers(answer_id=answer_data['id'], text=answer_data['text'], correct=answer_data['correct'], question=new_question)
                 db.session.add(new_answer)
                 db.session.commit()
 

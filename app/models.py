@@ -49,23 +49,23 @@ class Quiz(db.Model):
     quiz_id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
+    published = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     questions = db.relationship('QuizQuestion', backref='quiz')
     submissions = db.relationship('Submissions', backref="quiz")
-    # correct_answers = db.relationship('QuizQuestion')
 
 
 class QuizQuestion(db.Model):
-    question_id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.String, primary_key=True)
     question = db.Column(db.String, nullable=False)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.quiz_id'), nullable=False)
     answers = db.relationship('QuestionAnswers', backref='question')
 
 
 class QuestionAnswers(db.Model):
-    answer_id = db.Column(db.Integer, primary_key=True)
-    question_id = db.Column(db.Integer, db.ForeignKey('quiz_question.question_id'), nullable=False)
+    answer_id = db.Column(db.String, primary_key=True)
+    question_id = db.Column(db.String, db.ForeignKey('quiz_question.question_id'), nullable=False)
     text = db.Column(db.String, nullable=False)
     correct = db.Column(db.Boolean, nullable=False)
 
@@ -81,5 +81,5 @@ class Submissions(db.Model):
 class UserResponses(db.Model):
     response_id = db.Column(db.Integer, primary_key=True)
     submission_id = db.Column(db.Integer, db.ForeignKey('submissions.submission_id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('quiz_question.question_id'), nullable=False)
-    answer_id = db.Column(db.Integer, db.ForeignKey('question_answers.answer_id'), nullable=False)
+    question_id = db.Column(db.String, db.ForeignKey('quiz_question.question_id'), nullable=False)
+    answer_id = db.Column(db.String, db.ForeignKey('question_answers.answer_id'), nullable=False)

@@ -1,8 +1,8 @@
-"""empty message
+"""initial migration
 
-Revision ID: 60125808d1b7
+Revision ID: 0ee3ba35d2b5
 Revises: 
-Create Date: 2023-11-23 16:23:44.070949
+Create Date: 2023-11-28 20:19:52.149110
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '60125808d1b7'
+revision = '0ee3ba35d2b5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,7 +25,7 @@ def upgrade():
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('password', sa.String(), nullable=False),
     sa.Column('date_created', sa.DateTime(), nullable=False),
-    sa.Column('token', sa.String(length=32), nullable=False),
+    sa.Column('token', sa.String(length=32), nullable=True),
     sa.Column('token_expiration_date', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('user_id'),
     sa.UniqueConstraint('email')
@@ -37,13 +37,14 @@ def upgrade():
     sa.Column('quiz_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=False),
+    sa.Column('published', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('quiz_id')
     )
     op.create_table('quiz_question',
-    sa.Column('question_id', sa.Integer(), nullable=False),
+    sa.Column('question_id', sa.String(), nullable=False),
     sa.Column('question', sa.String(), nullable=False),
     sa.Column('quiz_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['quiz_id'], ['quiz.quiz_id'], ),
@@ -60,8 +61,8 @@ def upgrade():
     sa.PrimaryKeyConstraint('submission_id')
     )
     op.create_table('question_answers',
-    sa.Column('answer_id', sa.Integer(), nullable=False),
-    sa.Column('question_id', sa.Integer(), nullable=False),
+    sa.Column('answer_id', sa.String(), nullable=False),
+    sa.Column('question_id', sa.String(), nullable=False),
     sa.Column('text', sa.String(), nullable=False),
     sa.Column('correct', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['question_id'], ['quiz_question.question_id'], ),
@@ -70,8 +71,8 @@ def upgrade():
     op.create_table('user_responses',
     sa.Column('response_id', sa.Integer(), nullable=False),
     sa.Column('submission_id', sa.Integer(), nullable=False),
-    sa.Column('question_id', sa.Integer(), nullable=False),
-    sa.Column('answer_id', sa.Integer(), nullable=False),
+    sa.Column('question_id', sa.String(), nullable=False),
+    sa.Column('answer_id', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['answer_id'], ['question_answers.answer_id'], ),
     sa.ForeignKeyConstraint(['question_id'], ['quiz_question.question_id'], ),
     sa.ForeignKeyConstraint(['submission_id'], ['submissions.submission_id'], ),
