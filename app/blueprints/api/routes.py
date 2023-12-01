@@ -127,7 +127,8 @@ def userQuiz():
             'title': quiz.title,
             'description': quiz.description,
             'total_questions': len(quiz.questions),
-            'submissions': len(quiz.submissions)
+            'submissions': len(quiz.submissions),
+            'published': quiz.published
         }
         quizzes_data.append(quiz_data)
 
@@ -137,7 +138,7 @@ def userQuiz():
 @api.route('/all')
 def getQuizzes():
 
-    quizzes = db.session.execute(db.select(Quiz)).scalars().all()
+    quizzes = db.session.execute(db.select(Quiz).where(Quiz.published == True)).scalars().all()
     print("*"*30, quizzes)
     quiz_data = []
     for quiz in quizzes:
@@ -155,6 +156,36 @@ def getQuizzes():
         }
         quiz_data.append(quiz)    
     return quiz_data, 200
+
+# route to publish a quiz
+@api.route('/publish/<int:quiz_id>', methods=["POST"])
+@token_auth.login_required
+def publishQuestion(quiz_id):
+
+    quiz = db.session.get(Quiz, quiz_id)
+
+    if(quiz):
+        quiz.published = True
+        db.session.commit()
+        return {'success': "Quizs has been published!"}, 200
+    else:
+        return {'error': "This quiz cant be found"}, 404
+    
+
+# route to unpublish a quiz
+@api.route('/unpublish/<int:quiz_id>', methods=["POST"])
+@token_auth.login_required
+def unpublishQuestion(quiz_id):
+
+    quiz = db.session.get(Quiz, quiz_id)
+
+    if(quiz):
+        quiz.published = False
+        db.session.commit()
+        return {'success': "Quiz has been unpublished!"}, 200
+    else:
+        return {'error': "This quiz cant be found"}, 404
+
 
 # # route to get a single quiz
 # @api.route('/<int:quiz_id>')
@@ -182,11 +213,34 @@ def addQuestions(quiz_id):
 
     data = request.json
     print(data)
-    questions = data.get('questions', [])
 
+    required_items = ['description', 'title', 'questions']
+    missing_fields = [field for field in required_items if field not in data]
+
+    if missing_fields:
+        return {'error': f"{', '.join(missing_fields)}"}, 400
+    
+
+    des = data.get('description')
+    title = data.get('title')
+
+    current_quiz.description = des
+    current_quiz.title = title
+    
+
+
+    questions = data.get('questions', [])
+    all_question_ids = {question.question_id for question in current_quiz.questions}
+    incomming_ids = {question.get('id') for question in questions}
+
+    print(all_question_ids, incomming_ids, all_question_ids-incomming_ids)
+    
+
+    # questions_delete = [question]
     for question_data in questions:
         new_question = QuizQuestion(question_id=question_data['id'], question=question_data['question'], quiz=current_quiz)
-        db.session.add(new_question)
+        # db.session.add(new_question)
+        db.session.merge(new_question)
         db.session.commit()
 
         answers = question_data.get('answers', [])
@@ -195,9 +249,9 @@ def addQuestions(quiz_id):
         for answer_data in answers:
             if answer_data.get('question_id') == question_data.get('question_id'):
                 new_answer = QuestionAnswers(answer_id=answer_data['id'], text=answer_data['text'], correct=answer_data['correct'], question=new_question)
-                db.session.add(new_answer)
+                db.session.merge(new_answer)
                 db.session.commit()
-
+        
 
     try:
         # db.session.commit()

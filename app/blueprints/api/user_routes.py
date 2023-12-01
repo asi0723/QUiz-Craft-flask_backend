@@ -80,6 +80,8 @@ def updateUser():
 @basic_auth.login_required
 def login():
     auth_user = basic_auth.current_user()
+    if(not auth_user):
+        return {'error': "Invalid Credentials"}, 401
     token = auth_user.get_token()
     user_info = auth_user.to_dict()
     result = dict({'token': token}, **user_info)
