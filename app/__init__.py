@@ -4,18 +4,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 
-def create_app():
-    app = Flask(__name__)
-    CORS(app)
-    app.config.from_object(Config)
+app = Flask(__name__)
+CORS(app)
+app.config.from_object(Config)
 
-    db = SQLAlchemy(app)
+db = SQLAlchemy(app)
 
-    from app.blueprints.api import api, user_bp
-    migrate = Migrate(app, db)
-    app.register_blueprint(api)
-    app.register_blueprint(user_bp)
+from app.blueprints.api import api, user_bp
+migrate = Migrate(app, db)
+app.register_blueprint(api)
+app.register_blueprint(user_bp)
 
-    from . import models
-
-    return app
+from . import models
