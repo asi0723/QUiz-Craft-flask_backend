@@ -1,7 +1,13 @@
 import os
+from dotenv import load_dotenv
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir, '.env'))
 
 class Config:
-    SECRET_KEY = 'you-will-never-guess'
-    SQLALCHEMY_DATABASE_URI = "postgresql://dylan:riAov0tfECBcpraEmiKFawR72c0zWzI4@dpg-cll2q2cjtl8s73f6di0g-a.oregon-postgres.render.com/quiz_craft"
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    if os.environ.get("FLASK_ENV") == "production":
+        SQLALCHEMY_DATABASE_URI = os.environ.get("PRODUCTION_DATABASE_URI")
+    else:
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
+        
