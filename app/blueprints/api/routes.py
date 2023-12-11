@@ -114,6 +114,23 @@ def createQuiz():
 
     return {'msg': 'New quiz has been created', 'id': new_quiz.quiz_id}
 
+# route to delete a quiz
+@api.route("/delete/<int:quiz_id>", methods=["DELETE"])
+@token_auth.login_required
+def delete_quiz(quiz_id):
+
+    user = token_auth.current_user()
+
+    quiz = Quiz.query.get(quiz_id)
+
+    if quiz and quiz.user_id == user.user_id:
+        db.session.delete(quiz)
+        db.session.commit()
+        return {"msg": "Quiz has been deleted successfully"}, 200
+    else:
+        return {"error": "This quiz wasnt found"}, 404
+
+
 # get al quizzes for a user
 @api.route('/user-quizzes')
 @token_auth.login_required

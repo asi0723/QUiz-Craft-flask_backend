@@ -13,7 +13,7 @@ class User(db.Model):
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
     token = db.Column(db.String(32), index=True)
     token_expiration_date = db.Column(db.DateTime)
-    quizzes = db.relationship('Quiz', backref="author")
+    quizzes = db.relationship('Quiz', backref="author", cascade="all, delete")
 
     def __init__(self, **kwargs):
         # gets and generate password
@@ -52,15 +52,15 @@ class Quiz(db.Model):
     published = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
-    questions = db.relationship('QuizQuestion', backref='quiz')
-    submissions = db.relationship('Submissions', backref="quiz")
+    questions = db.relationship('QuizQuestion', backref='quiz', cascade="all, delete")
+    submissions = db.relationship('Submissions', backref="quiz", cascade="all, delete")
 
 
 class QuizQuestion(db.Model):
     question_id = db.Column(db.String, primary_key=True)
     question = db.Column(db.String, nullable=False)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.quiz_id'), nullable=False)
-    answers = db.relationship('QuestionAnswers', backref='question')
+    answers = db.relationship('QuestionAnswers', backref='question', cascade="all, delete")
 
 
 class QuestionAnswers(db.Model):
@@ -75,7 +75,7 @@ class Submissions(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.quiz_id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
-    responses = db.relationship('UserResponses', backref="submission")
+    responses = db.relationship('UserResponses', backref="submission", cascade="all, delete")
 
 
 class UserResponses(db.Model):
