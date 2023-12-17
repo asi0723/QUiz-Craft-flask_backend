@@ -362,6 +362,30 @@ def submitQuiz(quiz_id):
     db.session.commit()
     return {'success': "Submission sent thanks for completing this question"}, 200
 
-    
+@api.route("/submissions/<int:quiz_id>")
+@token_auth.login_required
+def getSubmissions(quiz_id):
+    current_user = token_auth.current_user()
 
-    
+    current_quiz = db.session.get(Quiz, quiz_id)
+    res = []
+
+    if current_quiz and current_user.user_id == current_quiz.user_id:
+        submissions = current_quiz.submissions
+        for sub in submissions:
+            user = db.session.get(User, sub.user_id)
+            obj = {
+                "user": {
+                    "firstName": user.first_name, 
+                    "id": user.user_id, 
+                    "lastName": user.last_name, 
+                },
+                "score": sub.score,
+                "date_submitted": sub.date_submitted,
+                "submission_id": sub.submission_id
+            }
+            res.append(obj)
+
+        return res, 200
+    else:
+        return {"error": "Cant find quiz for this user"}, 400
