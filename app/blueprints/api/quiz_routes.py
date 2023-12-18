@@ -248,7 +248,3 @@ def submitQuiz(quiz_id):
 
     db.session.commit()
     return {'success': "Submission sent thanks for completing this question"}, 200
-
-    
-
-    
