@@ -203,17 +203,6 @@ def unpublishQuestion(quiz_id):
     else:
         return {'error': "This quiz cant be found"}, 404
 
-
-# # route to get a single quiz
-# @api.route('/<int:quiz_id>')
-# def getSingleQuiz(quiz_id):
-
-#     quiz = db.session.query(Quiz).get(quiz_id)
-#     if not quiz:
-#         return {'error': "Quiz not found"}, 404
-#     else:
-#         Quiz.q
-# 
 # add questions to a quiz
 @api.route('/questions/add/<int:quiz_id>', methods=['POST'])
 @token_auth.login_required
@@ -237,23 +226,27 @@ def addQuestions(quiz_id):
     if missing_fields:
         return {'error': f"{', '.join(missing_fields)}"}, 400
     
-
     des = data.get('description')
     title = data.get('title')
 
     current_quiz.description = des
     current_quiz.title = title
     
-
-
     questions = data.get('questions', [])
     all_question_ids = {question.question_id for question in current_quiz.questions}
     incomming_ids = {question.get('id') for question in questions}
 
     print(all_question_ids, incomming_ids, all_question_ids-incomming_ids)
     
+    questions_delete = all_question_ids - incomming_ids
+    print("Questions I wanna delete", questions_delete)
+    for id in questions_delete:
+        question_to_delete = db.session.get(QuizQuestion, id)
+        db.session.delete(question_to_delete)
+        db.session.commit()
 
-    # questions_delete = [question]
+    print(" "*100, "Questions has been deleted")
+    
     for question_data in questions:
         new_question = QuizQuestion(question_id=question_data['id'], question=question_data['question'], quiz=current_quiz)
         # db.session.add(new_question)
@@ -271,7 +264,6 @@ def addQuestions(quiz_id):
         
 
     try:
-        # db.session.commit()
         return {'message': 'Questions have been added successfully'}
     except Exception as e:
         db.session.rollback()
