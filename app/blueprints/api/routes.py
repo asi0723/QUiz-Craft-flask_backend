@@ -202,24 +202,13 @@ def unpublishQuestion(quiz_id):
         return {'success': "Quiz has been unpublished!"}, 200
     else:
         return {'error': "This quiz cant be found"}, 404
-
-
-# # route to get a single quiz
-# @api.route('/<int:quiz_id>')
-# def getSingleQuiz(quiz_id):
-
-#     quiz = db.session.query(Quiz).get(quiz_id)
-#     if not quiz:
-#         return {'error': "Quiz not found"}, 404
-#     else:
-#         Quiz.q
-# 
-# add questions to a quiz
 @api.route('/questions/add/<int:quiz_id>', methods=['POST'])
 @token_auth.login_required
-def addQuestions(quiz_id):
+def add_questions(quiz_id):
     current_user = token_auth.current_user()
-    current_quiz = db.session.execute(db.select(Quiz).where((Quiz.quiz_id == quiz_id) & (Quiz.user_id == current_user.user_id))).scalar()
+    current_quiz = db.session.execute(
+        db.select(Quiz).where((Quiz.quiz_id == quiz_id) & (Quiz.user_id == current_user.user_id))
+    ).scalar()
 
     if not current_quiz:
         return {'error': 'You do not have access to read/write to this quiz'}, 403
@@ -229,53 +218,102 @@ def addQuestions(quiz_id):
         return error, 400
 
     data = request.json
-    print(data)
 
     required_items = ['description', 'title', 'questions']
     missing_fields = [field for field in required_items if field not in data]
 
     if missing_fields:
         return {'error': f"{', '.join(missing_fields)}"}, 400
-    
 
-    des = data.get('description')
-    title = data.get('title')
-
-    current_quiz.description = des
-    current_quiz.title = title
-    
-
+    update_quiz_info(current_quiz, data)
 
     questions = data.get('questions', [])
-    all_question_ids = {question.question_id for question in current_quiz.questions}
-    incomming_ids = {question.get('id') for question in questions}
+    update_questions(current_quiz, questions)
 
-    print(all_question_ids, incomming_ids, all_question_ids-incomming_ids)
-    
+    return {'message': 'Questions have been added successfully'}
 
-    # questions_delete = [question]
-    for question_data in questions:
-        new_question = QuizQuestion(question_id=question_data['id'], question=question_data['question'], quiz=current_quiz)
-        # db.session.add(new_question)
-        db.session.merge(new_question)
+
+def update_quiz_info(quiz, data):
+    description = data.get('description')
+    title = data.get('title')
+
+    quiz.description = description
+    quiz.title = title
+    db.session.commit()
+
+
+def update_questions(quiz, questions_data):
+    all_question_ids = {question.question_id for question in quiz.questions}
+    incoming_ids = {question.get('id') for question in questions_data}
+    new_questions = incoming_ids - all_question_ids
+    questions_update = all_question_ids & incoming_ids
+    questions_delete = all_question_ids - incoming_ids
+
+    for question_data in questions_data:
+        question_id = question_data['id']
+
+        if question_id in new_questions:
+            new_question = create_new_question(quiz, question_data)
+            update_answers(new_question, question_data.get("answers", []))
+        elif question_id in questions_update:
+            update_existing_question(question_id, question_data)
+
+    delete_questions(questions_delete)
+
+
+def create_new_question(quiz, question_data):
+    new_question = QuizQuestion(question_id=question_data['id'], question=question_data['question'], quiz=quiz)
+    db.session.add(new_question)
+    db.session.commit()
+    return new_question
+
+
+def update_existing_question(question_id, question_data):
+    current_question = db.session.get(QuizQuestion, question_id)
+    if current_question:
+        current_question.question = question_data['question']
+        update_answers(current_question, question_data.get('answers', []))
         db.session.commit()
 
-        answers = question_data.get('answers', [])
-        print(answers)
 
-        for answer_data in answers:
-            if answer_data.get('question_id') == question_data.get('question_id'):
-                new_answer = QuestionAnswers(answer_id=answer_data['id'], text=answer_data['text'], correct=answer_data['correct'], question=new_question)
-                db.session.merge(new_answer)
-                db.session.commit()
-        
+def update_answers(question, answers_data):
+    current_answers_ids = {answer.answer_id for answer in question.answers}
+    incoming_answer_ids = {answer_data['id'] for answer_data in answers_data}
 
-    try:
-        # db.session.commit()
-        return {'message': 'Questions have been added successfully'}
-    except Exception as e:
-        db.session.rollback()
-        return {'error': f'An error occurred: {str(e)}'}, 500
+    for answer_data in answers_data:
+        answer_id = answer_data['id']
+        if answer_id not in current_answers_ids:
+            create_new_answer(question, answer_data)
+        else:
+            update_existing_answer(answer_id, answer_data)
+    
+    delete_answers(current_answers_ids - incoming_answer_ids)
+
+
+def create_new_answer(question, answer_data):
+    new_answer = QuestionAnswers(answer_id=answer_data['id'], text=answer_data['text'], correct=answer_data['correct'], question=question)
+    db.session.add(new_answer)
+
+
+def update_existing_answer(answer_id, answer_data):
+    current_answer = db.session.get(QuestionAnswers, answer_id)
+    if current_answer:
+        current_answer.correct = answer_data.get("correct")
+        current_answer.text = answer_data.get("text")
+
+
+def delete_answers(answer_ids):
+    for answer_id in answer_ids:
+        current_answer = db.session.get(QuestionAnswers, answer_id)
+        db.session.delete(current_answer)
+
+
+def delete_questions(question_ids):
+    for question_id in question_ids:
+        question_to_delete = db.session.get(QuizQuestion, question_id)
+        db.session.delete(question_to_delete)
+
+    db.session.commit()
 
 # route to get all questions for a quiz
 @api.route('/question/<int:quiz_id>')
@@ -295,7 +333,7 @@ def getQuizQuestions(quiz_id, user_id=0):
         correct_answer = {
             'id': 0,
             'text': ""
-        }
+        }  
         for answer in question.answers:
             if(answer.correct):
                 correct_answer['id'] = answer.answer_id
