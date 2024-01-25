@@ -3,6 +3,7 @@ from flask import request
 
 api = Blueprint('api', __name__, url_prefix='/api/quiz')
 user_bp = Blueprint('userRoutes', __name__, url_prefix='/api/user')
+analyize = Blueprint('analytics', __name__, url_prefix='/api/analytics')
 
 def check_json_request():
     if not request.is_json:
@@ -12,3 +13,4 @@ def check_json_request():
 from . import routes
 # from . import quiz_routesd
 from . import user_routes
+from . import analytics

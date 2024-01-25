@@ -10,9 +10,10 @@ app.config.from_object(Config)
 
 db = SQLAlchemy(app)
 
-from app.blueprints.api import api, user_bp
+from app.blueprints.api import api, user_bp, analyize
 migrate = Migrate(app, db)
 app.register_blueprint(api)
 app.register_blueprint(user_bp)
+app.register_blueprint(analyize)
 
 from . import models
