@@ -202,6 +202,8 @@ def unpublishQuestion(quiz_id):
         return {'success': "Quiz has been unpublished!"}, 200
     else:
         return {'error': "This quiz cant be found"}, 404
+
+
 @api.route('/questions/add/<int:quiz_id>', methods=['POST'])
 @token_auth.login_required
 def add_questions(quiz_id):
@@ -326,7 +328,7 @@ def getQuizQuestions(quiz_id, user_id=0):
         quiz = db.session.execute(db.select(Quiz).where(Quiz.quiz_id == quiz_id)).scalar()
 
     if not quiz:
-        return {'error': "Quiz not found!"}, 404 
+        return {'error': "Quiz not found!"}
     questions = []
     for question in quiz.questions:
         incorrect_answers = []
@@ -383,7 +385,7 @@ def submitQuiz(quiz_id):
     if missing_fields:
         return {'error': f"{', '.join(missing_fields)} are missing"}, 400
 
-    new_submission = Submissions(quiz=current_quiz, score = data.get('score'), user_id=current_user.user_id)
+    new_submission = Submissions(quiz=current_quiz, score = data.get('score'), user_id=current_user.user_id, user=current_user)
 
     db.session.add(new_submission)
     db.session.commit()
@@ -427,3 +429,25 @@ def getSubmissions(quiz_id):
         return res, 200
     else:
         return {"error": "Cant find quiz for this user"}, 400
+
+
+# get user completed quizzes
+@api.route("/submissions/mine")
+@token_auth.login_required
+def getMyCompletedQUizzes():
+    current_user = token_auth.current_user()
+
+    # quizzes = current_user.submissions
+    subs = current_user.submissions
+    submitted = []
+    for sub in subs:
+        _dict = {}
+        _dict["date"] = sub.date_submitted
+        _dict["grade"] = sub.score
+        _dict["quiz_id"] = sub.quiz_id
+        quiz = db.session.get(Quiz, sub.quiz_id)
+        _dict["quiz_title"] = quiz.title
+        _dict["author"] = quiz.author.first_name + " " + quiz.author.last_name
+        submitted.append(_dict)
+
+    return {"submissions": submitted}

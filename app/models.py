@@ -14,6 +14,7 @@ class User(db.Model):
     token = db.Column(db.String(32), index=True)
     token_expiration_date = db.Column(db.DateTime)
     quizzes = db.relationship('Quiz', backref="author", cascade="all, delete")
+    submissions = db.relationship('Submissions', backref="user", cascade="all, delete")
 
     def __init__(self, **kwargs):
         # gets and generate password
@@ -37,6 +38,7 @@ class User(db.Model):
         return self.token
     
     def to_dict(self):
+        
         return {
             'id': self.user_id,
             'firstName': self.first_name,
@@ -76,6 +78,7 @@ class Submissions(db.Model):
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.quiz_id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
     responses = db.relationship('UserResponses', backref="submission", cascade="all, delete")
+
 
 
 class UserResponses(db.Model):
